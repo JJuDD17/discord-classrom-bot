@@ -17,9 +17,9 @@ async def init(db_file):
                       file_name text )''')
 
     await db.execute('''CREATE TABLE IF NOT EXISTS marks (
-                      student_id bigint NOT NULL,
                       mark int NOT NULL,
-                      task_id int NOT NULL )''')
+                      task_id int NOT NULL,
+                      student_id bigint NOT NULL )''')
 
     await db.commit()
 
@@ -78,6 +78,22 @@ async def tasks_done(student_id):
 async def all_task_ids():
     global db
     return [i[0] for i in await (await db.execute('SELECT task_id FROM tasks')).fetchall()]
+
+
+async def add_mark(mark, task_id, student_id):
+    global db
+    await db.execute('INSERT INTO marks VALUES (?, ?, ?)', (mark, task_id, student_id))
+
+
+async def get_mark(task_id, student_id):
+    global db
+    return await (await db.execute('SELECT mark FROM marks WHERE task_id = ? AND student_id = ?', (task_id, student_id))
+                  ).fetchone()[0]
+
+
+async def get_marks(student_id):
+    return [i[0] for i in
+            await (await db.execute('SELECT mark FROM marks WHERE student_id = ?', (student_id))).fetchall()]
 
 
 async def close():

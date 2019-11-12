@@ -172,6 +172,53 @@ async def undone_for_pupil(ctx: commands.context.Context):
         await ctx.send(f'Вы сделали все задания')
 
 
+@bot.command(name='add_mark', help='Поставить ученику оценку')
+@commands.guild_only()
+@commands.has_role('teacher')
+async def add_mark(ctx: commands.context.Context, mark: int, task_id: int, student: str):
+    if task_id not in database.all_task_ids():
+        raise NoSuchTaskId()
+    student_id = student_string_to_id(ctx, student)
+    await database.add_mark(mark, task_id, student_id)
+
+
+@bot.command(name='get_mark', help='Посмотреть оценку')
+@commands.guild_only()
+@commands.has_any_role()
+async def get_mark(ctx: commands.context.Context, task_id: int, student: str = ''):
+    if task_id not in database.all_task_ids():
+        raise NoSuchTaskId()
+    if has_role(ctx.message.author, 'teacher'):
+        student_id = student_string_to_id(ctx, student)
+        await ctx.send(await database.get_mark(task_id, student_id))
+    elif has_role(ctx.message.author, 'pupil'):
+        await ctx.send(await database.get_mark(task_id, ctx.message.author.id))
+
+
+@bot.command(name='get_marks', help='Посмотреть все оценки')
+@commands.guild_only()
+@commands.has_any_role()
+async def get_marks(ctx: commands.context.Context, student: str = ''):
+    if has_role(ctx.message.author, 'teacher'):
+        student_id = student_string_to_id(ctx, student)
+        await ctx.send(', '.join(await database.get_marks(student_id)))
+    elif has_role(ctx.message.author, 'pupil'):
+        await ctx.send(', '.join(await database.get_marks(ctx.message.author.id)))
+
+
+@bot.command(name='average_mark', help='Средняя оценка')
+@commands.guild_only()
+@commands.has_any_role()
+async def average_mark(ctx: commands.context.Context, student: str = ''):
+    if has_role(ctx.message.author, 'teacher'):
+        student_id = student_string_to_id(ctx, student)
+        marks = await database.get_marks(student_id)
+        await ctx.send(', '.join(sum(marks) / len(marks)))
+    elif has_role(ctx.message.author, 'pupil'):
+        marks = await database.get_marks(ctx.message.author.id)
+        await ctx.send(', '.join(sum(marks) / len(marks)))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('token', default=None, nargs='?',
