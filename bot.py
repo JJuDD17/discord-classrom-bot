@@ -78,6 +78,8 @@ async def add_task(ctx: commands.context.Context, *description):
     file, file_name = await get_file_from_message(ctx.message)
     task_id = await database.add_task(file, file_name, description)
     await ctx.send(f'Задание успешно добавлено. Его номер - {task_id}')
+    await notify(f'Появилось новое задание. {description}', ctx.guild, 'pupil', None,
+                 discord.File(io.BytesIO(file), filename=file_name))
 
 
 @bot.command(name='get_task', help='Получить файл задания')
@@ -102,6 +104,8 @@ async def add_solution(ctx: commands.context.Context, task_id: int):
         file, file_name = await get_file_from_message(ctx.message)
         await database.add_solution(ctx.message.author.id, task_id, file, file_name)
         await ctx.send('Решение успешно добавлено.')
+        await notify(f'Ученик {ctx.message.author.name} решил задание №{task_id}.', ctx.guild, 'teacher', None,
+                     discord.File(io.BytesIO(file), filename=file_name))
     else:
         raise NoSuchTaskId()
 
@@ -180,6 +184,7 @@ async def add_mark(ctx: commands.context.Context, mark: int, task_id: int, stude
         raise NoSuchTaskId()
     student_id = student_string_to_id(ctx, student)
     await database.add_mark(mark, task_id, student_id)
+    await notify(f'Вы получили оценку {mark} за задание {task_id}.', ctx.guild, user_id=student_id)
 
 
 @bot.command(name='get_mark', help='Посмотреть оценку')

@@ -72,3 +72,20 @@ async def get_undone_students(task_id, guild_members):
         return all_students.difference(students_done)
     else:
         return set()
+
+
+async def notify(message, guild, role=None, user_id=None, file=None):
+    if not role and not user_id:
+        return commands.errors.MissingRequiredArgument('user_id')
+    if role:
+        for member in guild.members:
+            if has_role(member, role):
+                channel = await member.create_dm()
+                await channel.send(message, file=file)
+    if user_id:
+        members = discord.utils.get(guild.members, id=user_id)
+        if not members:
+            print(f'no member {user_id} in guild {guild}')
+            return
+        channel = await members[0].create_dm()
+        await channel.send(message, file=file)
