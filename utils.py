@@ -3,6 +3,7 @@ import database
 import discord
 from discord.ext import commands
 import os
+import inspect
 
 
 def get_token(parser):
@@ -22,19 +23,19 @@ async def student_string_to_id(ctx: commands.context.Context, student: str):
     if student.startswith('<@') and student.endswith('>'):
         return int(student[2:-1])
     if '#' not in student:
-        result = [i for i in discord.utils.get(ctx.guild.members, name=student) if has_role(i, 'pupil')]
+        result = [i for i in ctx.guild.members if i.name == student]
         if result:
-            if len(result) == 1:
-                return result[0].id
-            else:
+            if len(result) > 1:
                 raise StudentStringToIdConversionError(
                   'Есть несколько учеников с таким ником. Укажите ник с дискриминатором (четыре цифры после ника и #)')
+            else:
+                return result[0].id
         else:
-            raise StudentStringToIdConversionError('Нету учеников с таким ником.')
+            raise StudentStringToIdConversionError('Нет ученика с таким ником.')
     else:
         name, discriminator = student.split('#')
-        result = [i for i in discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)
-                  if has_role(i, 'pupil')]
+        result = [i for i in ctx.guild.members if i.name == name and
+                  i.discriminator == discriminator and has_role(i, 'pupil')]
         if result:
             return result[0].id
         else:
@@ -76,16 +77,17 @@ async def get_undone_students(task_id, guild_members):
 
 async def notify(message, guild, role=None, user_id=None, file=None):
     if not role and not user_id:
-        return commands.errors.MissingRequiredArgument('user_id')
+        raise commands.errors.MissingRequiredArgument(
+            inspect.Parameter('user_id', inspect.Parameter.POSITIONAL_OR_KEYWORD))
     if role:
         for member in guild.members:
             if has_role(member, role):
                 channel = await member.create_dm()
                 await channel.send(message, file=file)
     if user_id:
-        members = discord.utils.get(guild.members, id=user_id)
-        if not members:
+        member = discord.utils.get(guild.members, id=user_id)
+        if not member:
             print(f'no member {user_id} in guild {guild}')
             return
-        channel = await members[0].create_dm()
+        channel = await member.create_dm()
         await channel.send(message, file=file)

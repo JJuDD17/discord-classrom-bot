@@ -13,3 +13,9 @@ class MissingFile(commands.CommandError):
 
 class NoSuchTaskId(commands.CommandError):
     pass
+
+
+class MissingMark(commands.CommandError):
+    def __init__(self, task_id, student_id):
+        self.task_id = task_id
+        self.student_id = student_id
