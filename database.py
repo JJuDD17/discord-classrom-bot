@@ -22,8 +22,6 @@ async def init():
                       task_id int NOT NULL,
                       student_id bigint NOT NULL )''')
 
-    await conn.commit()
-
 
 async def add_task(file, file_name, description):
     global conn
