@@ -75,19 +75,17 @@ async def get_undone_students(task_id, guild_members):
         return set()
 
 
-async def notify(message, guild, role=None, user_id=None, file=None):
-    if not role and not user_id:
-        raise commands.errors.MissingRequiredArgument(
-            inspect.Parameter('user_id', inspect.Parameter.POSITIONAL_OR_KEYWORD))
-    if role:
-        for member in guild.members:
-            if has_role(member, role):
-                channel = await member.create_dm()
-                await channel.send(message, file=file)
-    if user_id:
-        member = discord.utils.get(guild.members, id=user_id)
-        if not member:
-            print(f'no member {user_id} in guild {guild}')
-            return
-        channel = await member.create_dm()
-        await channel.send(message, file=file)
+async def notify_role(message, guild, role, file=None):
+    for member in guild.members:
+        if has_role(member, role):
+            channel = await member.create_dm()
+            await channel.send(message, file=file)
+
+
+async def notify_user(message, guild, user_id, file=None):
+    member = discord.utils.get(guild.members, id=user_id)
+    if not member:
+        print(f'no member {user_id} in guild {guild}')
+        return
+    channel = await member.create_dm()
+    await channel.send(message, file=file)
